@@ -1,3 +1,5 @@
 # Semantic Segmentation using Adversarial Networks
 
-Use FCN-VGG16 as Segmentor instead of dilated8.  
+### Differences
+
+Use of FCN-VGG16 instead of Dilated8 as Segmentor.
