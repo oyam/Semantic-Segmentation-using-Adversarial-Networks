@@ -94,8 +94,8 @@ def main():
 
     # Set up a neural network to train and an optimizer
     if args.updater=='gan':
-        gen_cls, initgen_cls, lr = generators[args.generator]
-        dis_cls, initdis_cls, lr, L_bce_weight = discriminators[args.discriminator]
+        gen_cls, initgen_cls, gen_lr = generators[args.generator]
+        dis_cls, initdis_cls, dis_lr, L_bce_weight = discriminators[args.discriminator]
         print('# generator: {}'.format(gen_cls.__name__))
         print('# discriminator: {}'.format(dis_cls.__name__))
         print('')
@@ -116,8 +116,8 @@ def main():
             chainer.cuda.get_device(args.gpu).use()  # Make a specified GPU current
             gen.to_gpu()  # Copy the model to the GPU
             dis.to_gpu()
-        opt_gen = make_optimizer(gen, lr)
-        opt_dis = make_optimizer(dis, lr)
+        opt_gen = make_optimizer(gen, gen_lr)
+        opt_dis = make_optimizer(dis, dis_lr)
         model={'gen':gen,'dis':dis}
         optimizer={'gen': opt_gen, 'dis': opt_dis}
     elif args.updater=='standard':
