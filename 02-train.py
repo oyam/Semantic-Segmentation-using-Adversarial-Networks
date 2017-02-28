@@ -30,8 +30,6 @@ def parse_args(generators, discriminators, updaters):
                         help='Pretrained model of generator')
     parser.add_argument('--initdis_path', default=None,
                         help='Pretrained model of discriminator')
-    parser.add_argument('--L_bce_weight', '-l', type=float, default=1.0,
-                        help='Weight of adversarial net loss')
     parser.add_argument('--batchsize', '-b', type=int, default=1,
                         help='Number of images in each mini-batch')
     parser.add_argument('--iteration', '-i', type=int, default=100000,
@@ -64,16 +62,16 @@ def make_optimizer(model, lr=1e-10, momentum=0.99):
 
 def main():
     generators = {
-        'fcn32s': (FCN32s, VGG16), # (model, initmodel)
-        'fcn16s': (FCN16s, FCN32s),
-        'fcn8s': (FCN8s, FCN16s),
+        'fcn32s': (FCN32s, VGG16, 1e-10), # (model, initmodel, learning_rate)
+        'fcn16s': (FCN16s, FCN32s, 1e-12),
+        'fcn8s': (FCN8s, FCN16s, 1e-14),
     }
     discriminators = {
-        'largefov': (LargeFOV, LargeFOV),
-        'largefov-light': (LargeFOVLight, LargeFOVLight),
-        'smallfov': (SmallFOV, SmallFOV),
-        'smallfov-light': (SmallFOVLight, SmallFOVLight),
-        'sppdis': (SPPDiscriminator, SPPDiscriminator),
+        'largefov': (LargeFOV, LargeFOV, 0.1, 1.0), # (model, initmodel, learning_rate, L_bce_weight)
+        'largefov-light': (LargeFOVLight, LargeFOVLight, 0.1, 1.0),
+        'smallfov': (SmallFOV, SmallFOV, 0.1, 0.1),
+        'smallfov-light': (SmallFOVLight, SmallFOVLight, 0.2, 1.0),
+        'sppdis': (SPPDiscriminator, SPPDiscriminator, 0.1, 1.0),
     }
     updaters = {
         'gan': GANUpdater,
@@ -96,8 +94,8 @@ def main():
 
     # Set up a neural network to train and an optimizer
     if args.updater=='gan':
-        gen_cls, initgen_cls = generators[args.generator]
-        dis_cls, initdis_cls = discriminators[args.discriminator]
+        gen_cls, initgen_cls, lr = generators[args.generator]
+        dis_cls, initdis_cls, lr, L_bce_weight = discriminators[args.discriminator]
         print('# generator: {}'.format(gen_cls.__name__))
         print('# discriminator: {}'.format(dis_cls.__name__))
         print('')
@@ -118,12 +116,13 @@ def main():
             chainer.cuda.get_device(args.gpu).use()  # Make a specified GPU current
             gen.to_gpu()  # Copy the model to the GPU
             dis.to_gpu()
-        opt_gen = make_optimizer(gen)
-        opt_dis = make_optimizer(dis)
+        opt_gen = make_optimizer(gen, lr)
+        opt_dis = make_optimizer(dis, lr)
         model={'gen':gen,'dis':dis}
         optimizer={'gen': opt_gen, 'dis': opt_dis}
     elif args.updater=='standard':
-        model_cls, initmodel_cls = generators[args.generator]
+        model_cls, initmodel_cls, lr = generators[args.generator]
+        L_bce_weight = None
         print('# model: {}'.format(model_cls.__name__))
         print('')
         if args.initgen_path:
@@ -134,7 +133,7 @@ def main():
         if args.gpu >= 0:
             chainer.cuda.get_device(args.gpu).use()  # Make a specified GPU current
             model.to_gpu()  # Copy the model to the GPU
-        optimizer = make_optimizer(model)
+        optimizer = make_optimizer(model, lr)
 
     # Set up a trainer
     updater = updaters[args.updater](
@@ -142,7 +141,7 @@ def main():
         iterator=train_iter,
         optimizer=optimizer,
         device=args.gpu,
-        L_bce_weight=args.L_bce_weight,
+        L_bce_weight=L_bce_weight,
         n_class=n_class,)
 
     trainer = training.Trainer(updater, (args.iteration, 'iteration'), out=args.out)
