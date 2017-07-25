@@ -4,7 +4,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import cStringIO as StringIO
+try:
+    import cStringIO as StringIO
+except:
+    from io import StringIO
 import hashlib
 import json
 import math
