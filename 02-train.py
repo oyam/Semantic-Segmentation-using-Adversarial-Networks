@@ -154,7 +154,7 @@ def main():
         TestModeEvaluator(
             val_iter, updater, device=args.gpu),
         trigger=snapshot_interval,
-        invoke_before_training=True)
+        invoke_before_training=False)
     trainer.extend(
         extensions.snapshot(filename='snapshot_iter_{.updater.iteration}.npz'),
         trigger=snapshot_interval)
