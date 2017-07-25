@@ -157,10 +157,10 @@ def bitget(byteval, idx):
 
 def labelcolormap(N=256):
     cmap = np.zeros((N, 3))
-    for i in xrange(0, N):
+    for i in range(0, N):
         id = i
         r, g, b = 0, 0, 0
-        for j in xrange(0, 8):
+        for j in range(0, 8):
             r = np.bitwise_or(r, (bitget(id, 0) << 7-j))
             g = np.bitwise_or(g, (bitget(id, 1) << 7-j))
             b = np.bitwise_or(b, (bitget(id, 2) << 7-j))
